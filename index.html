@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ikur007</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --bg-panel: #11161d;
+        --line: #22303f;
+        --text: #d7e1ea;
+        --muted: #5c6b7a;
+        --accent: #ffb454;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        overflow: hidden;
+      }
+      .scanline {
+        position: fixed;
+        inset: 0;
+        background: repeating-linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0.025) 0px,
+          rgba(255, 255, 255, 0.025) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+        pointer-events: none;
+        z-index: 5;
+      }
+      .stage {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .frame {
+        border: 1px solid var(--line);
+        background: var(--bg-panel);
+        padding: 48px 64px;
+        border-radius: 4px;
+        box-shadow:
+          0 0 0 1px rgba(255, 180, 84, 0.04),
+          0 20px 60px rgba(0, 0, 0, 0.5);
+        position: relative;
+      }
+      .frame::before {
+        content: "user@ikur007:~$";
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        background: var(--bg);
+        padding: 0 8px;
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+      }
+      .eyebrow {
+        font-size: 12px;
+        letter-spacing: 0.2em;
+        color: var(--muted);
+        margin: 0 0 14px 0;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(40px, 9vw, 96px);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        white-space: nowrap;
+      }
+      h1 .zeros {
+        color: var(--accent);
+      }
+      .cursor {
+        display: inline-block;
+        width: 0.5ch;
+        background: var(--accent);
+        margin-left: 6px;
+        animation: blink 1s steps(1) infinite;
+      }
+      @keyframes blink {
+        0%,
+        49% {
+          opacity: 1;
+        }
+        50%,
+        100% {
+          opacity: 0;
+        }
+      }
+      .sub {
+        margin-top: 18px;
+        font-size: 13px;
+        color: var(--muted);
+        letter-spacing: 0.02em;
+      }
+      .sub span {
+        color: var(--accent);
+      }
+      .poc-log {
+        margin-top: 22px;
+        padding-top: 16px;
+        border-top: 1px dashed var(--line);
+        font-size: 11px;
+        line-height: 1.8;
+        color: var(--muted);
+      }
+      .poc-log .k {
+        color: var(--muted);
+      }
+      .poc-log .v {
+        color: var(--accent);
+        word-break: break-all;
+      }
+      #captured-data {
+        display: none;
+        margin-top: 22px;
+        max-width: min(760px, 80vw);
+        max-height: 320px;
+        overflow: auto;
+        padding: 12px;
+        border: 1px dashed var(--line);
+        color: var(--accent);
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 11px;
+        line-height: 1.5;
+      }
+      @media (max-width: 520px) {
+        .frame {
+          padding: 32px 24px;
+        }
+        .frame::before {
+          font-size: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="scanline"></div>
+    <div class="stage">
+      <div class="frame">
+        <p class="eyebrow">welcome to</p>
+        <h1>
+          ikur<span class="zeros">poc</span><span class="cursor">&nbsp;</span>
+        </h1>
+        <p class="sub">status: <span>online</span></p>
+
+        <div class="poc-log">
+          <div>
+            <span class="k">referrer:</span> <span class="v" id="ref"></span>
+          </div>
+          <div>
+            <span class="k">landed_at:</span> <span class="v" id="time"></span>
+          </div>
+          <div>
+            <span class="k">url:</span> <span class="v" id="url"></span>
+          </div>
+        </div>
+        <pre id="captured-data" aria-live="polite"></pre>
+      </div>
+    </div>
+
+    <script>
+      const senderOrigin = "https://ikur007.github.io";
+      const capturedData = document.getElementById("captured-data");
+
+      document.getElementById("ref").textContent =
+        document.referrer || "(empty — no referrer sent)";
+      document.getElementById("time").textContent = new Date().toISOString();
+      document.getElementById("url").textContent = window.location.href;
+
+      function showCapturedData(data) {
+        const record = {
+          receivedAt: new Date().toISOString(),
+          data,
+        };
+        localStorage.setItem("ikur007-captured-data", JSON.stringify(record));
+        capturedData.textContent = JSON.stringify(record, null, 2);
+        capturedData.style.display = "block";
+      }
+
+      const saved = localStorage.getItem("ikur007-captured-data");
+      if (saved) {
+        capturedData.textContent = saved;
+        capturedData.style.display = "block";
+      }
+
+      window.addEventListener("message", (event) => {
+        if (event.origin !== senderOrigin) return;
+        showCapturedData(event.data);
+      });
+    </script>
+  </body>
+</html>
